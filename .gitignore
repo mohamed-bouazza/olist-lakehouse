@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+*.egg-info/
+dist/
+build/
+
+# Données : jamais dans Git
+data/
+*.csv
+*.parquet
+*.zip
+
+# Identifiants et secrets
+.databrickscfg
+.env
+
+# État local du bundle Databricks
+.databricks/
+
+# Éditeurs et système
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
