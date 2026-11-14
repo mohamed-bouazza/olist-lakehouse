@@ -27,16 +27,19 @@ def charger_jeux(spark: SparkSession, table: str) -> dict[str, pd.DataFrame]:
     df = (
         spark.table(table)
         .filter("dans_population")
-        .select(
-            "order_id", "periode", F.col(CIBLE).cast("int").alias(CIBLE),
-            *[F.col(c).cast("double").alias(c) for c in FEATURES_NUMERIQUES],
-            *[F.col(c).cast("int").alias(c) for c in FEATURES_BOOLEENNES],
-            *[F.coalesce(F.col(c), F.lit("inconnu")).alias(c) for c in FEATURES_CATEGORIELLES],
-        )
+        .select("order_id", "periode", F.col(CIBLE).cast("int").alias(CIBLE), *colonnes_typees())
         .toPandas()
     )
     return {p: d.reset_index(drop=True) for p, d in df.groupby("periode")}
+    
 
+def colonnes_typees() -> list:
+    """Les 34 colonnes du modèle, typées. Partagée par l'entraînement et le scoring."""
+    return (
+        [F.col(c).cast("double").alias(c) for c in FEATURES_NUMERIQUES]
+        + [F.col(c).cast("int").alias(c) for c in FEATURES_BOOLEENNES]
+        + [F.coalesce(F.col(c), F.lit("inconnu")).alias(c) for c in FEATURES_CATEGORIELLES]
+    )
 
 def preprocesseur(imputer: bool = True) -> ColumnTransformer:
     """Prépare les 34 colonnes. imputer=False laisse les NaN aux boosters, qui les gèrent nativement."""
