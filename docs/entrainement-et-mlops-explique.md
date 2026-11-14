@@ -2,8 +2,6 @@
 
 Projet `olist-lakehouse`. Ce document explique l'étape d'entraînement (`src/olist/train.py` et `src/jobs/05_train`), les résultats obtenus, et ce qui se passe ensuite en production : scoring, monitoring, dérive, réentraînement.
 
-À placer dans `docs/` du dépôt.
-
 ---
 
 ## 0. L'essentiel en une page
@@ -23,7 +21,7 @@ Projet `olist-lakehouse`. Ce document explique l'étape d'entraînement (`src/ol
 
 **Ce que ça veut dire.** Le modèle apprend un vrai signal : il classe les retards deux à trois fois mieux que le hasard. Mais il se dégrade sur la période de test, parce que le monde a changé entre l'entraînement et le test. C'est un résultat modeste et honnête, et sa dégradation est exactement le phénomène que le MLOps sert à détecter et à corriger.
 
-**Où on en est.** Le modèle est enregistré dans Unity Catalog, version 1, avec l'étiquette `champion`. Il reste à l'utiliser (scoring), à automatiser l'enchaînement (job), puis à surveiller (monitoring).
+**Où on en est.** Le modèle est enregistré dans Unity Catalog, version 1, avec l'étiquette `champion`. Le scoring (`06_score`) l'applique aux commandes, et le job `olist-daily` enchaîne tout le pipeline. Il reste à surveiller (monitoring).
 
 ---
 
@@ -49,7 +47,7 @@ ml.features_commandes                 99 441 lignes
       │  05_train    4 modèles, comparaison, seuil, test
       ▼
 MLflow (4 fiches d'entraînement)  ──►  Unity Catalog : delivery_delay_model v1 « champion »
-      │  06_score    (à faire)
+      │  06_score    charge @champion et son seuil
       ▼
 gold_delivery_predictions             une probabilité par commande
       │  monitoring  (à faire)
@@ -64,8 +62,8 @@ table de suivi : dérive, taux d'alertes, lift
 | Modèle en étoile | `03_gold` | `gold.py`, `geo.py` | fait |
 | Features | `04_features` | `features.py` | fait |
 | Entraînement | `05_train` | `train.py` | fait |
-| Scoring | `06_score` | à écrire | à faire |
-| Job qui enchaîne tout | Lakeflow | | à faire |
+| Scoring | `06_score` | `scoring.py` | fait |
+| Job qui enchaîne tout | `olist-daily` (Asset Bundle) | `resources/olist_daily.job.yml` | fait |
 | Monitoring, réentraînement mensuel | | | à faire (temps 2) |
 
 ---
@@ -539,25 +537,21 @@ def psi(reference, actuel, nb_tranches=10):
 | suivi MLflow : paramètres, métriques, modèles | oui |
 | seuil choisi sur la validation, test mesuré une fois | oui |
 | modèle versionné dans Unity Catalog, étiquette `champion`, seuil en note | oui |
-| scoring avec `@champion` vers une table de prédictions | non, étape suivante |
-| job qui enchaîne les notebooks | non |
+| scoring avec `@champion` vers une table de prédictions | oui |
+| job qui enchaîne les notebooks, décrit en Asset Bundle | oui |
 | monitoring : taux d'alertes, PSI, lift hebdomadaire | non |
 | dates de découpage en paramètres, réentraînement mensuel | non |
 | duel champion contre challenger automatisé | non |
-| bundle et CI/CD GitHub Actions | non |
+| CI/CD GitHub Actions | non |
 
 ---
 
-## 12. Quoi faire maintenant, dans l'ordre
+## 12. La suite, dans l'ordre
 
-1. **Commit & Push** de `train.py` et `05_train`, et de ce document dans `docs/`.
-2. **Capture d'écran** de la page Compare de MLflow, pour le README.
-3. **Scoring** : notebook `06_score` qui charge `@champion`, lit son seuil, et écrit `gold_delivery_predictions`.
-4. **Job Lakeflow** : enchaîner 01 → 02 → 03 → 04 → 06, avec le paramètre `catalog`.
-5. **README** : schéma d'architecture, tableau de résultats, capture MLflow, limites connues.
-6. **Candidature Inetum**, dès que les points 3 à 5 sont faits.
-7. **Une expérience v2**, pas dix : retirer `mois`, brider les arbres, comparer avec et sans le thermomètre, le tout sur la validation. Si une variante gagne, elle devient v2 et prend l'étiquette `champion`.
-8. **Bundle et GitHub Actions**, puis monitoring.
+1. **Une expérience v2**, pas dix : retirer `mois`, brider les arbres, comparer avec et sans le thermomètre, le tout sur la validation. Si une variante gagne, elle devient v2 et prend l'étiquette `champion`.
+2. **Monitoring** : taux d'alertes, PSI, lift par semaine de scoring.
+3. **Réentraînement mensuel** : dates de découpage en paramètres, duel champion contre challenger.
+4. **GitHub Actions** : déployer le bundle à chaque push.
 
 ---
 
@@ -569,7 +563,7 @@ def psi(reference, actuel, nb_tranches=10):
 - Le seuil fixe a produit trois fois plus d'alertes en test qu'en validation.
 - Monitoring et réentraînement périodique sont décrits mais pas encore codés.
 
-## 14. Quatre phrases pour l'entretien
+## 14. Quatre points clés
 
 - « Mes features historiques sont calculées à l'instant de l'approbation, et un test recalcule l'historique d'une commande par un autre chemin pour prouver qu'il n'y a pas de fuite. »
 - « J'ai découpé dans le temps, choisi le modèle et le seuil sur la validation, et regardé le test une seule fois. »

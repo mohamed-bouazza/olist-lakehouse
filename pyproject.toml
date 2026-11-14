@@ -1,7 +1,7 @@
 [project]
 name = "olist"
 version = "0.1.0"
-description = "Add your description here"
+description = "Prédiction des retards de livraison Olist sur Databricks"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
