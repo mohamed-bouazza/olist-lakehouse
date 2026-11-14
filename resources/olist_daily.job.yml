@@ -1,0 +1,43 @@
+resources:
+  jobs:
+    olist_daily:
+      name: olist-daily
+      max_concurrent_runs: 1
+
+      parameters:
+        - name: catalog
+          default: ${var.catalog}
+
+      tasks:
+        - task_key: bronze
+          notebook_task:
+            notebook_path: ../src/jobs/01_bronze.ipynb
+
+        - task_key: silver
+          depends_on:
+            - task_key: bronze
+          notebook_task:
+            notebook_path: ../src/jobs/02_silver.ipynb
+
+        - task_key: gold
+          depends_on:
+            - task_key: silver
+          notebook_task:
+            notebook_path: ../src/jobs/03_gold.ipynb
+
+        - task_key: features
+          depends_on:
+            - task_key: gold
+          notebook_task:
+            notebook_path: ../src/jobs/04_features.ipynb
+
+        - task_key: score
+          depends_on:
+            - task_key: features
+          notebook_task:
+            notebook_path: ../src/jobs/06_score.ipynb
+
+      schedule:
+        quartz_cron_expression: "0 0 6 * * ?"
+        timezone_id: Africa/Casablanca
+        pause_status: PAUSED

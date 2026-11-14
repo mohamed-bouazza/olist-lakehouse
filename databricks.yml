@@ -1,0 +1,17 @@
+bundle:
+  name: olist-lakehouse
+
+include:
+  - resources/*.yml
+
+variables:
+  catalog:
+    description: Catalogue Unity Catalog cible
+    default: olist_dev
+
+targets:
+  dev:
+    mode: development
+    default: true
+    workspace:
+      host: https://dbc-cccebe96-e602.cloud.databricks.com
