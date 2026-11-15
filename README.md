@@ -62,6 +62,26 @@ dégrade sur le test : le taux d'alertes triple alors que les retards réels
 baissent. La cause probable est un changement de distribution après la grève des
 transporteurs de mai 2018. C'est le cas que le monitoring doit détecter.
 
+## Rapport Power BI
+
+Les prédictions sont restituées dans Power BI, branché sur la vue
+`lakehouse.vw_suivi_predictions` (prédiction, vraie réponse et axes d'analyse
+par commande) à travers le SQL Warehouse, en mode Import : le volume est faible
+et la table ne change qu'une fois par jour.
+
+![Rapport Power BI](docs/img/rapport_powerbi.png)
+
+*Capture sur les trois périodes réunies. Filtrées sur le test, les mêmes mesures
+donnent une précision de 7 %, un rappel de 68 % et 34 % de commandes en alerte,
+soit les valeurs du notebook d'entraînement.*
+
+La courbe hebdomadaire rend la dérive visible : jusqu'au printemps 2018, le taux
+d'alertes suit le taux de retard réel ; à l'été 2018, il dépasse 70 % alors que
+les retards restent sous 10 %. Le rapport montre aussi la répartition des
+probabilités et les alertes par État du client : elles se concentrent dans le
+Nord-Est, loin des vendeurs de São Paulo, là où les retards sont effectivement
+les plus fréquents.
+
 ## Choix techniques
 
 - **Pas de fuite de données.** Les features d'historique (taux de retard du
@@ -84,6 +104,7 @@ transporteurs de mai 2018. C'est le cas que le monitoring doit détecter.
 |---|---|
 | `src/olist/` | la logique : `bronze.py`, `silver.py`, `gold.py`, `geo.py`, `features.py`, `train.py`, `scoring.py` |
 | `src/jobs/` | les notebooks `01_bronze` à `06_score`, qui appellent ces modules |
+| `src/sql/vw_suivi_predictions.sql` | la vue lue par Power BI |
 | `resources/olist_daily.job.yml` | la définition du job |
 | `databricks.yml` | la configuration du bundle |
 | `_cicd/bootstrap.sql` | création des catalogues, schémas et volumes |
